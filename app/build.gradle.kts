@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.example.walkie"
     compileSdk = 34
+    buildToolsVersion = "34.0.0"
 
     defaultConfig {
         applicationId = "com.example.walkie"
@@ -42,10 +43,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
-    
-    // WebRTC for P2P connection
-    implementation("org.webrtc:google-webrtc:1.0.32003")
-    
+
     // QR code
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")

@@ -1,8 +1,7 @@
 allprojects {
     repositories {
-        maven { url 'https://storage.googleapis.com/webrtc-builds/maven/' }
-        maven { url 'https://repo1.maven.org/maven2/' }
         maven { url 'https://maven.google.com' }
+        maven { url 'https://repo1.maven.org/maven2/' }
         maven { url 'https://mirrors.aliyun.com/android/maven2/' }
         maven { url 'https://jitpack.io' }
         mavenCentral()
