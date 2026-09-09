@@ -3,7 +3,6 @@ package com.example.walkie
 import android.content.Context
 import kotlinx.coroutines.*
 import org.json.JSONObject
-import org.webrtc.*
 
 /**
  * Stub for PeerConnector - WebRTC dependency not available in CI.
@@ -15,11 +14,11 @@ class PeerConnector(
     private val onPeerConnected: (String) -> Unit,
     private val onPeerDisconnected: (String) -> Unit
 ) {
-    fun getLocalDescription(remotePeerId: String, callback: (SessionDescription) -> Unit) {}
+    fun getLocalDescription(remotePeerId: String, callback: (String) -> Unit) {}
     fun handleRemoteAnswer(remotePeerId: String, sdp: String) {}
     fun handleRemoteIceCandidate(remotePeerId: String, sdpMid: String, sdpMLineIndex: Int, candidate: String) {}
     fun sendToAll(message: String) {}
     fun disconnect() {}
-    fun getPendingCandidates(peerId: String): List<IceCandidate> = emptyList()
+    fun getPendingCandidates(peerId: String): List<String> = emptyList()
     fun clearPendingCandidates(peerId: String) {}
 }

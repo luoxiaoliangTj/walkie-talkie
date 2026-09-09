@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
-import org.webrtc.SessionDescription
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
