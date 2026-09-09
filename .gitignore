@@ -1,8 +1,11 @@
-.gradle/
+# Build
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
 build/
-app/build/
-*.iml
+.gradle/
 local.properties
-*.jks
-*.keystore
-.metadata/
