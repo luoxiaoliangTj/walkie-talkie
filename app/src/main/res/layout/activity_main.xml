@@ -33,6 +33,14 @@
             android:textColor="#CCC"
             android:textSize="14sp" />
 
+        <TextView
+            android:id="@+id/peerIdText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#AAA"
+            android:textSize="12sp"
+            android:layout_marginEnd="8dp" />
+
         <Button
             android:id="@+id/btnShowQR"
             android:layout_width="wrap_content"
@@ -52,7 +60,7 @@
 
     </LinearLayout>
 
-    <!-- Messages List -->
+    <!-- Messages / Status Area -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/messagesList"
         android:layout_width="match_parent"
@@ -61,13 +69,52 @@
         android:scrollbars="vertical"
         android:padding="8dp" />
 
-    <!-- Input Area -->
+    <!-- PTT Button Area -->
+    <TextView
+        android:id="@+id/pttStatusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="按住说话"
+        android:textColor="#AAA"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnPtt"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="按住说话"
+            android:textSize="20sp"
+            android:textColor="#FFF"
+            android:background="@android:drawable/btn_default"
+            android:gravity="center" />
+
+        <ProgressBar
+            android:id="@+id/pttProgress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:visibility="gone"
+            style="?android:attr/progressBarStyleHorizontal" />
+    </FrameLayout>
+
+    <!-- Text Input Area (hidden by default for pure walkie-talkie) -->
     <LinearLayout
+        android:id="@+id/textInputArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="8dp">
+        android:visibility="gone">
 
         <EditText
             android:id="@+id/inputMessage"

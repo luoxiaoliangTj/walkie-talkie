@@ -7,150 +7,159 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.view.MotionEvent
 import android.view.View
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import org.json.JSONObject
-import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
+
     private lateinit var peerConnector: PeerConnector
-    private lateinit var messagesList: RecyclerView
-    private lateinit var inputMessage: EditText
-    private lateinit var btnSend: Button
-    private lateinit var btnShowQR: Button
-    private lateinit var btnScanQR: Button
     private lateinit var statusText: TextView
     private lateinit var statusDot: View
-    
-    private val messages = mutableListOf<WalkieMessage.Broadcast>()
+    private lateinit var peerIdText: TextView
+    private lateinit var btnPtt: Button
+    private lateinit var pttStatusText: TextView
+
     private val connectedPeers = mutableSetOf<String>()
-    private var myPeerId: String = UUID.randomUUID().toString().take(8)
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var isPttActive = false
     private var walkieService: WalkieService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        
-        initViews()
-        initPeerConnector()
-        bindService()
-    }
 
-    private fun initViews() {
-        messagesList = findViewById(R.id.messagesList)
-        inputMessage = findViewById(R.id.inputMessage)
-        btnSend = findViewById(R.id.btnSend)
-        btnShowQR = findViewById(R.id.btnShowQR)
-        btnScanQR = findViewById(R.id.btnScanQR)
         statusText = findViewById(R.id.statusText)
         statusDot = findViewById(R.id.statusDot)
+        peerIdText = findViewById(R.id.peerIdText)
+        btnPtt = findViewById(R.id.btnPtt)
+        pttStatusText = findViewById(R.id.pttStatusText)
 
-        btnSend.setOnClickListener { sendMessage() }
-        btnShowQR.setOnClickListener { showMyQR() }
-        btnScanQR.setOnClickListener { startScan() }
-        
-        inputMessage.setOnEditorActionListener { _, _, _ ->
-            sendMessage()
-            true
+        peerIdText.text = ""
+
+        checkPermissionsAndStart()
+    }
+
+    private fun checkPermissionsAndStart() {
+        val needed = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            needed.add(Manifest.permission.RECORD_AUDIO)
+        }
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            needed.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        if (needed.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 200)
+        } else {
+            startPeerConnector()
         }
     }
 
-    private fun initPeerConnector() {
+    override fun onRequestPermissionsResult(rc: Int, perms: Array<out String>, grants: IntArray) {
+        super.onRequestPermissionsResult(rc, perms, grants)
+        if (rc == 200) {
+            val micOk = ContextCompat.checkSelfPermission(
+                this, Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+            if (micOk) {
+                startPeerConnector()
+            } else {
+                Toast.makeText(this, "需要麦克风权限才能对讲", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun startPeerConnector() {
         peerConnector = PeerConnector(
             context = this,
-            onMessageReceived = { json -> handleMessage(json) },
+            onMessageReceived = { /* text messages removed */ },
             onPeerConnected = { peerId ->
-                runOnUiThread {
+                mainHandler.post {
                     connectedPeers.add(peerId)
                     updateStatus()
                 }
             },
             onPeerDisconnected = { peerId ->
-                runOnUiThread {
+                mainHandler.post {
                     connectedPeers.remove(peerId)
                     updateStatus()
                 }
             }
         )
+        peerIdText.text = "ID: ${peerConnector.localPeerId}"
+        peerConnector.onPttStateChanged = { active ->
+            mainHandler.post { updatePttUI(active) }
+        }
+        peerConnector.start()
+        bindService()
+        updateStatus()
+        setupPtt()
     }
 
-    private fun handleMessage(json: String) {
-        val message = WalkieMessage.fromJson(json) ?: return
-        when (message) {
-            is WalkieMessage.Broadcast -> {
-                runOnUiThread {
-                    messages.add(message)
-                    // Update UI
+    private fun setupPtt() {
+        btnPtt.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (!isPttActive) {
+                        isPttActive = true
+                        peerConnector.startPtt()
+                    }
+                    true
                 }
-            }
-            is WalkieMessage.Join -> {
-                runOnUiThread {
-                    connectedPeers.add(message.peerId)
-                    updateStatus()
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (isPttActive) {
+                        isPttActive = false
+                        peerConnector.stopPtt()
+                    }
+                    true
                 }
-            }
-            is WalkieMessage.Leave -> {
-                runOnUiThread {
-                    connectedPeers.remove(message.peerId)
-                    updateStatus()
-                }
+                else -> false
             }
         }
     }
 
-    private fun sendMessage() {
-        val text = inputMessage.text.toString().trim()
-        if (text.isEmpty()) return
-        
-        val message = WalkieMessage.Broadcast(
-            id = UUID.randomUUID().toString(),
-            senderId = myPeerId,
-            content = text
-        )
-        
-        peerConnector.sendToAll(message.toJson())
-        inputMessage.setText("")
-        
-        // Add to own display
-        messages.add(message)
-    }
-
-    private fun showMyQR() {
-        // Generate QR with my peer info
-        val qrData = JSONObject().apply {
-            put("peerId", myPeerId)
-            put("offer", "") // Will be filled when connecting
-        }.toString()
-        
-        // Show QR dialog
-        // TODO: implement QR generation
-        Toast.makeText(this, "我的ID: $myPeerId", Toast.LENGTH_LONG).show()
-    }
-
-    private fun startScan() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) 
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), 100)
-            return
+    private fun updatePttUI(active: Boolean) {
+        if (active) {
+            btnPtt.text = "🔴 松开停止"
+            btnPtt.setBackgroundColor(0xFFCC0000.toInt())
+            pttStatusText.text = "正在广播..."
+            pttStatusText.setTextColor(0xFF00FF00.toInt())
+        } else {
+            btnPtt.text = "按住说话"
+            btnPtt.setBackgroundColor(0xFF6200EE.toInt())
+            pttStatusText.text = "按住说话"
+            pttStatusText.setTextColor(0xFFAAAAAA.toInt())
         }
-        // TODO: implement QR scanning
-        Toast.makeText(this, "扫码功能开发中...", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateStatus() {
         val count = connectedPeers.size
         if (count == 0) {
-            statusText.text = "未连接"
+            statusText.text = "未连接 — 等待附近设备..."
             statusDot.setBackgroundColor(0xFFFF0000.toInt())
+            btnPtt.isEnabled = true
+            btnPtt.alpha = 0.5f
         } else {
-            statusText.text = "已连接 $count 人"
+            statusText.text = "已连接 $count 个设备"
             statusDot.setBackgroundColor(0xFF00FF00.toInt())
+            btnPtt.isEnabled = true
+            btnPtt.alpha = 1.0f
         }
     }
 
@@ -172,6 +181,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         peerConnector.disconnect()
-        unbindService(serviceConnection)
+        runCatching { unbindService(serviceConnection) }
     }
 }
