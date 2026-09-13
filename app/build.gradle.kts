@@ -44,6 +44,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
 
+    // WebRTC (use im.conversations for Maven compatibility)
+    implementation("im.conversations.webrtc:webrtc-android:119.0.0")
+    
     // QR code
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
