@@ -67,6 +67,7 @@ jobs:
 
       - name: Rename APK
         run: |
+          ls -la app/build/outputs/apk/debug/
           TAG=${GITHUB_REF#refs/*/}
           if [[ "$TAG" == v* ]]; then
             NAME="WalkieTalkie-${TAG}"
@@ -75,6 +76,7 @@ jobs:
           fi
           cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/${NAME}.apk
           echo "Built: ${NAME}.apk"
+          ls -la app/build/outputs/apk/debug/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
