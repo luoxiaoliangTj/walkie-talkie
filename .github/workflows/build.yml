@@ -65,27 +65,27 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
-      - name: Create Release with APK
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          TAG=${GITHUB_REF#refs/*/}
-          NAME="WalkieTalkie-${TAG}.apk"
-          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
-          if [ -n "$APK" ]; then
-            cp "$APK" "$NAME"
-            ls -la "$NAME"
-          else
-            echo "No APK found"
-            ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Dir not found"
-            exit 1
-          fi
-          # Create release if not exists, then upload
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release exists, uploading..."
-            gh release upload "$TAG" "$NAME" --clobber
-          else
-            echo "Creating release..."
-            gh release create "$TAG" "$NAME" --generate-notes
-          fi
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: WalkieTalkie-APK
+          path: release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.apk
+          generate_release_notes: true
+          fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
