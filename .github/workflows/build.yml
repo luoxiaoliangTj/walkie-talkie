@@ -50,13 +50,6 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log
 
-      - name: Dump errors on failure
-        if: failure()
-        run: |
-          echo "=== BUILD ERRORS ==="
-          grep -E "^e: |error: |FAILURE|BUILD FAILED|Exception|Caused by" build_output.log | head -50
-          echo "=== END ERRORS ==="
-
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
@@ -65,31 +58,37 @@ jobs:
           path: build_output.log
           retention-days: 7
 
-      - name: Rename APK
+      - name: Rename & Copy APK
         run: |
-          ls -la app/build/outputs/apk/debug/
           TAG=${GITHUB_REF#refs/*/}
           if [[ "$TAG" == v* ]]; then
-            NAME="WalkieTalkie-${TAG}"
+            NAME="WalkieTalkie-${TAG}.apk"
           else
-            NAME="WalkieTalkie-latest"
+            NAME="WalkieTalkie-latest.apk"
           fi
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/${NAME}.apk
-          echo "Built: ${NAME}.apk"
-          ls -la app/build/outputs/apk/debug/
+          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          if [ -n "$APK" ]; then
+            cp "$APK" "$NAME"
+            echo "Built: $NAME"
+            ls -la "$NAME"
+          else
+            echo "No APK found!"
+            ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Directory not found"
+            exit 1
+          fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: WalkieTalkie-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: WalkieTalkie-*.apk
           retention-days: 30
 
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/WalkieTalkie-*.apk
+          files: WalkieTalkie-*.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
