@@ -50,12 +50,11 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tee build_output.log
 
-      - name: Show APK location
+      - name: Show build outputs
         run: |
-          echo "=== APK files found ==="
-          find app/build/outputs -name "*.apk" 2>/dev/null || echo "No APK files found"
-          echo "=== Debug dir ==="
-          ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "Debug dir not found"
+          echo "=== APK files ==="
+          find app/build/outputs -name "*.apk" 2>/dev/null
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null
 
       - name: Upload build log
         if: always()
@@ -65,18 +64,38 @@ jobs:
           path: build_output.log
           retention-days: 7
 
-      - name: Upload Artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: WalkieTalkie-APK
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
 
+      - name: Prepare Release Assets
+        id: prep
+        run: |
+          TAG=${GITHUB_REF#refs/*/}
+          if [[ "$TAG" == v* ]]; then
+            NAME="WalkieTalkie-${TAG}"
+          else
+            NAME="WalkieTalkie-latest"
+          fi
+          APK_SRC=$(find app/build/outputs/apk/debug -name "app-debug.apk" | head -1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "${NAME}.apk"
+            echo "name=${NAME}" >> $GITHUB_OUTPUT
+            echo "apk=${NAME}.apk" >> $GITHUB_OUTPUT
+            ls -la "${NAME}.apk"
+          else
+            echo "No APK found!"
+            exit 1
+          fi
+
       - name: Upload to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/debug/*.apk
+          files: ${{ steps.prep.outputs.apk }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
