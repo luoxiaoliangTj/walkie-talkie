@@ -4,6 +4,7 @@ import android.content.Context
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import org.webrtc.*
+import java.util.UUID
 
 /**
  * Manages WebRTC peer connections with up to 3 members total (2 connections each).
@@ -15,6 +16,9 @@ class PeerConnector(
     private val onPeerConnected: (String) -> Unit,
     private val onPeerDisconnected: (String) -> Unit
 ) {
+    val localPeerId: String = UUID.randomUUID().toString().take(8)
+    var onPttStateChanged: ((Boolean) -> Unit)? = null
+    
     private val peerConnections = mutableMapOf<String, PeerConnection>()
     private val dataChannels = mutableMapOf<String, DataChannel>()
     private val pendingIceCandidates = mutableMapOf<String, MutableList<IceCandidate>>()
@@ -135,6 +139,18 @@ class PeerConnector(
                 channel.send(data)
             }
         }
+    }
+
+    fun start() {
+        // Stub: in real implementation, would start listening for connections
+    }
+
+    fun startPtt() {
+        onPttStateChanged?.invoke(true)
+    }
+
+    fun stopPtt() {
+        onPttStateChanged?.invoke(false)
     }
 
     fun disconnect() {
