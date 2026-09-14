@@ -77,6 +77,7 @@ class PeerConnector(
             override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
             override fun onIceConnectionReceivingChange(receiving: Boolean) {}
             override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
             override fun onAddStream(stream: MediaStream?) {}
             override fun onRemoveStream(stream: MediaStream?) {}
             override fun onRenegotiationNeeded() {}
