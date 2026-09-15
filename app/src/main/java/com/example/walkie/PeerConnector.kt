@@ -34,8 +34,9 @@ class PeerConnector(
                 .createInitializationOptions()
         )
 
-        val encoderFactory = DefaultVideoEncoderFactory(null, true, true)
-        val decoderFactory = DefaultVideoDecoderFactory(null)
+        val eglBase = EglBase.create()
+        val encoderFactory = DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true)
+        val decoderFactory = DefaultVideoDecoderFactory(eglBase.eglBaseContext)
         factory = PeerConnectionFactory.builder()
             .setVideoEncoderFactory(encoderFactory)
             .setVideoDecoderFactory(decoderFactory)
