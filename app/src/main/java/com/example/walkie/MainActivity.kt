@@ -53,6 +53,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkPermissionsAndStart() {
+        // Check for previous crash
+        val crashLog = CrashHandler.getCrashLog(this)
+        if (crashLog != null) {
+            AlertDialog.Builder(this)
+                .setTitle("上次崩溃日志")
+                .setMessage(crashLog)
+                .setPositiveButton("确定") { _, _ ->
+                    CrashHandler.clearCrashLog(this)
+                    startApp()
+                }
+                .setCancelable(false)
+                .show()
+        } else {
+            startApp()
+        }
+    }
+
+    private fun startApp() {
         val needed = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
@@ -166,6 +184,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindService() {
         val intent = Intent(this, WalkieService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
