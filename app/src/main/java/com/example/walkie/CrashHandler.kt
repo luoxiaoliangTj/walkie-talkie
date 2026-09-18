@@ -1,6 +1,5 @@
 package com.example.walkie
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import java.io.File
@@ -12,13 +11,16 @@ import java.util.Locale
 
 class CrashHandler private constructor() : Thread.UncaughtExceptionHandler {
     private val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+    private var context: Context? = null
 
     companion object {
         private const val TAG = "WalkieCrash"
         private const val CRASH_FILE = "crash_log.txt"
 
         fun init(context: Context) {
-            Thread.setDefaultUncaughtExceptionHandler(CrashHandler())
+            val instance = CrashHandler()
+            instance.context = context.applicationContext
+            Thread.setDefaultUncaughtExceptionHandler(instance)
         }
 
         fun getCrashLog(context: Context): String? {
