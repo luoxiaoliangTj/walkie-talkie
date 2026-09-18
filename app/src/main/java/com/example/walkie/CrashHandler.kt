@@ -54,8 +54,10 @@ class CrashHandler private constructor() : Thread.UncaughtExceptionHandler {
                 |
                 |=== END ===
             """.trimMargin()
-            val file = File(context.filesDir, CRASH_FILE)
-            file.writeText(log)
+            context?.let {
+                val file = File(it.filesDir, CRASH_FILE)
+                file.writeText(log)
+            }
         } catch (e: Exception) {
             // Ignore
         }
