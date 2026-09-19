@@ -26,6 +26,13 @@ class WalkieService : Service() {
         startForeground(1, buildNotification())
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1, buildNotification())
+        }
+        return START_STICKY
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
